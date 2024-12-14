@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cringe Button</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        img {
+            width: 150px;
+            height: 150px;
+            cursor: pointer;
+        }
+        #button1 {
+            width: 200px;
+            height: 200px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #counter {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div id="passwordPrompt">
+        <h1>Zadej heslo</h1>
+        <input type="password" id="passwordInput" placeholder="Zadejte heslo">
+        <button id="submitPassword">Odeslat</button>
+        <div id="errorMessage" style="color: red; margin-top: 10px;"></div>
+    </div>
+
+    <div id="mainContent" style="display: none;">
+        <h1>Cringe Button</h1>
+        <img id="button1" src="button1.jpg" alt="Tlačítko 1">
+        <div id="counter1">Počet kliknutí dnes: 0</div>
+        <div style="height: 30px;"></div>
+
+        <img id="button2" src="button2.jpg" alt="Tlačítko 2">
+        <div id="counter2">Počet kliknutí dnes: 0</div>
+        <div style="height: 30px;"></div>
+
+        <img id="button3" src="button3.jpg" alt="Tlačítko 3">
+        <div id="counter3">Počet kliknutí dnes: 0</div>
+        <div style="height: 30px;"></div>
+
+        <button id="showStatsButton">Zobrazit statistiky</button>
+    </div>
+
+    <script>
+        const PASSWORD = "cringe";
+
+        // Funkce pro ověření hesla
+        document.getElementById('submitPassword').addEventListener('click', function () {
+            const enteredPassword = document.getElementById('passwordInput').value;
+            if (enteredPassword === PASSWORD) {
+                document.getElementById('passwordPrompt').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+            } else {
+                document.getElementById('errorMessage').innerText = 'Nesprávné heslo. Zkuste to znovu!';
+            }
+        });
+
+        // Inicializace počítadel
+        let counters = {
+            button1: 0,
+            button2: 0,
+            button3: 0
+        };
+
+        let statsData = JSON.parse(localStorage.getItem('clickStats')) || {};
+        const today = new Date().toISOString().split('T')[0];
+
+        // Funkce pro načtení uložených dat
+        function loadData() {
+            if (!statsData[today]) {
+                statsData[today] = {
+                    button1: 0,
+                    button2: 0,
+                    button3: 0,
+                    total: 0
+                };
+                localStorage.setItem('clickStats', JSON.stringify(statsData));
+            } else {
+                counters = { ...statsData[today] };
+                updateUI();
+            }
+        }
+
+        // Funkce pro aktualizaci UI
+        function updateUI() {
+            document.getElementById('counter1').innerText = `Počet kliknutí dnes: ${counters.button1}`;
+            document.getElementById('counter2').innerText = `Počet kliknutí dnes: ${counters.button2}`;
+            document.getElementById('counter3').innerText = `Počet kliknutí dnes: ${counters.button3}`;
+        }
+
+        // Funkce pro aktualizaci počítadel
+        function updateCounter(button) {
+            counters[button]++;
+            statsData[today][button] = counters[button];
+            statsData[today].total = counters.button1 + counters.button2 + counters.button3;
+            localStorage.setItem('clickStats', JSON.stringify(statsData));
+            updateUI();
+        }
+
+        // Přidání posluchačů událostí
+        document.getElementById('button1').addEventListener('click', () => updateCounter('button1'));
+        document.getElementById('button2').addEventListener('click', () => updateCounter('button2'));
+        document.getElementById('button3').addEventListener('click', () => updateCounter('button3'));
+
+        // Funkce pro zobrazení statistik
+        function showStats() {
+            let statsTable = '<table border="1" style="margin: 20px auto; border-collapse: collapse; text-align: center;">';
+            statsTable += '<tr><th>Datum</th><th>Cringe</th><th>Vláďa</th><th>Stella</th><th>Cringe skóre</th></tr>';
+            for (const [date, data] of Object.entries(statsData)) {
+                statsTable += `<tr><td>${date}</td><td>${data.button1}</td><td>${data.button2}</td><td>${data.button3}</td><td>${data.total}</td></tr>`;
+            }
+            statsTable += '</table>';
+
+            const statsWindow = window.open('', 'Stats', 'width=600,height=400');
+            statsWindow.document.write('<html><head><title>Statistiky</title></head><body>' + statsTable + '</body></html>');
+            statsWindow.document.close();
+        }
+
+        // Přidání posluchače události na tlačítko pro zobrazení statistik
+        document.getElementById('showStatsButton').addEventListener('click', showStats);
+
+        // Načtení dat při načtení stránky
+        loadData();
+    </script>
+</body>
+</html>
