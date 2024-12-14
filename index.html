@@ -28,6 +28,15 @@
             margin-top: 20px;
             font-size: 18px;
         }
+        #importStatsLabel {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -53,87 +62,95 @@
         <div style="height: 30px;"></div>
 
         <button id="showStatsButton">Zobrazit statistiky</button>
+        <button id="exportStats">Exportovat statistiky</button>
+        <input type="file" id="importStats" style="display: none;">
+        <label for="importStats" id="importStatsLabel">Importovat statistiky</label>
     </div>
 
     <script>
         const PASSWORD = "cringe";
 
-        // Funkce pro ověření hesla
         document.getElementById('submitPassword').addEventListener('click', function () {
             const enteredPassword = document.getElementById('passwordInput').value;
             if (enteredPassword === PASSWORD) {
                 document.getElementById('passwordPrompt').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'block';
+                loadData();
             } else {
                 document.getElementById('errorMessage').innerText = 'Nesprávné heslo. Zkuste to znovu!';
             }
         });
 
-        // Inicializace počítadel
         let counters = {
             button1: 0,
             button2: 0,
             button3: 0
         };
 
-        let statsData = JSON.parse(localStorage.getItem('clickStats')) || {};
         const today = new Date().toISOString().split('T')[0];
+        let statsData = {};
 
-        // Funkce pro načtení uložených dat
         function loadData() {
-            if (!statsData[today]) {
-                statsData[today] = {
-                    button1: 0,
-                    button2: 0,
-                    button3: 0,
-                    total: 0
-                };
-                localStorage.setItem('clickStats', JSON.stringify(statsData));
-            } else {
-                counters = { ...statsData[today] };
+            const savedData = localStorage.getItem('clickStats');
+            if (savedData) {
+                statsData = JSON.parse(savedData);
+                counters = statsData[today] || { button1: 0, button2: 0, button3: 0 };
                 updateUI();
             }
         }
 
-        // Funkce pro aktualizaci UI
+        function saveData() {
+            statsData[today] = counters;
+            localStorage.setItem('clickStats', JSON.stringify(statsData));
+        }
+
         function updateUI() {
             document.getElementById('counter1').innerText = `Počet kliknutí dnes: ${counters.button1}`;
             document.getElementById('counter2').innerText = `Počet kliknutí dnes: ${counters.button2}`;
             document.getElementById('counter3').innerText = `Počet kliknutí dnes: ${counters.button3}`;
         }
 
-        // Funkce pro aktualizaci počítadel
         function updateCounter(button) {
             counters[button]++;
-            statsData[today][button] = counters[button];
-            statsData[today].total = counters.button1 + counters.button2 + counters.button3;
-            localStorage.setItem('clickStats', JSON.stringify(statsData));
+            saveData();
             updateUI();
         }
 
-        // Přidání posluchačů událostí
         document.getElementById('button1').addEventListener('click', () => updateCounter('button1'));
         document.getElementById('button2').addEventListener('click', () => updateCounter('button2'));
         document.getElementById('button3').addEventListener('click', () => updateCounter('button3'));
 
-        // Funkce pro zobrazení statistik
-        function showStats() {
+        document.getElementById('exportStats').addEventListener('click', () => {
+            const blob = new Blob([JSON.stringify(statsData, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'stats.json';
+            link.click();
+        });
+
+        document.getElementById('importStats').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const text = await file.text();
+                statsData = JSON.parse(text);
+                localStorage.setItem('clickStats', JSON.stringify(statsData));
+                loadData();
+            }
+        });
+
+        document.getElementById('showStatsButton').addEventListener('click', () => {
             let statsTable = '<table border="1" style="margin: 20px auto; border-collapse: collapse; text-align: center;">';
             statsTable += '<tr><th>Datum</th><th>Cringe</th><th>Vláďa</th><th>Stella</th><th>Cringe skóre</th></tr>';
             for (const [date, data] of Object.entries(statsData)) {
-                statsTable += `<tr><td>${date}</td><td>${data.button1}</td><td>${data.button2}</td><td>${data.button3}</td><td>${data.total}</td></tr>`;
+                statsTable += `<tr><td>${date}</td><td>${data.button1 || 0}</td><td>${data.button2 || 0}</td><td>${data.button3 || 0}</td><td>${(data.button1 || 0) + (data.button2 || 0) + (data.button3 || 0)}</td></tr>`;
             }
             statsTable += '</table>';
 
             const statsWindow = window.open('', 'Stats', 'width=600,height=400');
             statsWindow.document.write('<html><head><title>Statistiky</title></head><body>' + statsTable + '</body></html>');
             statsWindow.document.close();
-        }
+        });
 
-        // Přidání posluchače události na tlačítko pro zobrazení statistik
-        document.getElementById('showStatsButton').addEventListener('click', showStats);
-
-        // Načtení dat při načtení stránky
         loadData();
     </script>
 </body>
