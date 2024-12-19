@@ -110,10 +110,16 @@
             document.getElementById('counter3').innerText = `Počet kliknutí dnes: ${counters.button3}`;
         }
 
+        function playSound(buttonId) {
+            const audio = new Audio(`${buttonId}.mp3`);
+            audio.play();
+        }
+
         function updateCounter(button) {
             counters[button]++;
             saveData();
             updateUI();
+            playSound(button);
         }
 
         document.getElementById('button1').addEventListener('click', () => updateCounter('button1'));
